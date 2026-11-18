@@ -1,0 +1,18 @@
+{
+  "name": "gestfarm-android",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Application Android GESTFARM by Kenfack Sobtia via Capacitor",
+  "scripts": {
+    "android:sync": "cap sync android",
+    "android:open": "cap open android",
+    "android:build:debug": "cd android && ./gradlew assembleDebug"
+  },
+  "dependencies": {
+    "@capacitor/android": "latest",
+    "@capacitor/core": "latest"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "latest"
+  }
+}

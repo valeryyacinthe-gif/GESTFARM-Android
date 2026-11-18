@@ -1,0 +1,36 @@
+GESTFARM — PRÉPARATION DE L'APPLICATION ANDROID (CAPACITOR)
+
+IMPORTANT
+Cette première version Android est une enveloppe Capacitor qui ouvre l'application web publiée sur https://gestfarm.vercel.app.
+- Elle réutilise l'application web et la base Supabase existantes.
+- Une connexion Internet est nécessaire.
+- Les mises à jour publiées sur le site seront visibles dans l'application sans réinstaller l'APK.
+- Ce paquet est le projet source Android, pas encore le fichier APK compilé.
+
+PRÉREQUIS SUR LE PC WINDOWS
+1. Installer Node.js (version LTS récente).
+2. Installer Android Studio.
+3. Dans Android Studio > SDK Manager, installer l'Android SDK recommandé et les outils de compilation.
+4. Installer un JDK compatible avec la version Android Gradle Plugin installée par Capacitor (Android Studio fournit généralement le JBR adapté).
+
+ÉTAPES
+1. Extraire le dossier GESTFARM-Android sur le PC.
+2. Ouvrir un terminal dans ce dossier.
+3. Exécuter : npm install
+4. Exécuter : npx cap add android
+5. Exécuter : npx cap sync android
+6. Exécuter : npx cap open android
+7. Dans Android Studio, laisser Gradle terminer la synchronisation.
+8. Pour produire un APK de test : Build > Build Bundle(s) / APK(s) > Build APK(s).
+
+EMPLACEMENT HABITUEL DE L'APK DE TEST
+android/app/build/outputs/apk/debug/app-debug.apk
+
+À SAVOIR
+- L'APK debug sert aux premiers essais et n'est pas destiné à la publication Play Store.
+- Pour distribuer une version officielle, générer un APK signé (ou un AAB signé) dans Android Studio et conserver précieusement la clé de signature.
+- L'identifiant Android est com.gestfarm.byks.
+- Le nom affiché est GESTFARM.
+
+LIMITATION DE CETTE PREMIÈRE ENVELOPPE
+L'application est chargée depuis le site Vercel. Elle ne fonctionne donc pas hors connexion et dépend de la disponibilité du site et d'Internet. Une version Android embarquant les fichiers web localement pourra être préparée plus tard si le dépôt complet du projet web est disponible.
