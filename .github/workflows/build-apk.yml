@@ -97,6 +97,14 @@ jobs:
               shutil.rmtree(adaptive)
           PY
 
+      # Keep the Android debug signing key stable between builds so APK updates
+      # can be installed over the previous GESTFARM version.
+      - name: Restore persistent Android debug signing key
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: gestfarm-android-debug-signing-v1
+
       - name: Build Android APK
         run: |
           cd android
