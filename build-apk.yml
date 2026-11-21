@@ -1,0 +1,76 @@
+name: Build GESTFARM Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Android repository
+        uses: actions/checkout@v4
+
+      - name: Checkout GESTFARM web application
+        uses: actions/checkout@v4
+        with:
+          repository: valeryyacinthe-gif/Gestfarm
+          ref: main
+          path: web
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Build GESTFARM web application
+        working-directory: web
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          npm install
+          npm run build
+
+      - name: Copy web application into Capacitor assets
+        run: |
+          rm -rf dist
+          cp -R web/dist ./dist
+
+      - name: Install Android wrapper dependencies
+        run: npm install
+
+      - name: Generate Android project
+        run: npx cap add android
+
+      - name: Synchronize Capacitor
+        run: npx cap sync android
+
+      - name: Build Android APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload GESTFARM APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: GESTFARM-Android-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
