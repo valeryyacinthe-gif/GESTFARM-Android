@@ -1,4 +1,4 @@
-name: Build GESTFARM Android APK
+name: Build GESTFARM by KS Android APK
 
 on:
   workflow_dispatch:
@@ -172,7 +172,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: android-latest
-          name: GESTFARM Android
+          name: GESTFARM by KS — Android
           target_commitish: main
           files: android/app/build/outputs/apk/debug/app-debug.apk
           overwrite_files: true
