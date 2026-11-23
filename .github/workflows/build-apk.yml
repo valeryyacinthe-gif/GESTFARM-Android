@@ -15,7 +15,7 @@ permissions:
 jobs:
   build:
     # Ignore le push automatique qui ne fait qu'enregistrer le SHA web déjà compilé.
-    if: github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'chore: record web source')
+    if: ${{ github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'chore: record web source') }}
     runs-on: ubuntu-latest
 
     steps:
