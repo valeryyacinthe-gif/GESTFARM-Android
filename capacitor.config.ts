@@ -4,7 +4,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 // Le service worker et IndexedDB permettent ensuite l'utilisation hors réseau.
 const config: CapacitorConfig = {
   appId: 'com.gestfarm.byks',
-  appName: 'GESTFARM',
+  appName: 'GESTFARM by KS',
   webDir: 'dist'
 };
 

@@ -2,7 +2,7 @@
   "name": "gestfarm-android",
   "version": "1.0.0",
   "private": true,
-  "description": "Application Android GESTFARM by Kenfack Sobtia",
+  "description": "Application Android GESTFARM by KS",
   "scripts": {
     "android:add": "cap add android",
     "android:sync": "cap sync android",
