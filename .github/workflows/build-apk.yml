@@ -37,8 +37,8 @@ jobs:
           previous="$(cat web-source-commit.txt 2>/dev/null || true)"
           echo "current=$current" >> "$GITHUB_OUTPUT"
           echo "Web source: $current"
-          echo "Previously built: \${previous:-none}"
-          if [ "\${GITHUB_EVENT_NAME}" = "schedule" ] && [ "$current" = "$previous" ]; then
+          echo "Previously built: ${previous:-none}"
+          if [ "${GITHUB_EVENT_NAME}" = "schedule" ] && [ "$current" = "$previous" ]; then
             echo "should_build=false" >> "$GITHUB_OUTPUT"
             echo "No web change detected; APK build skipped."
           else
@@ -66,8 +66,8 @@ jobs:
         if: steps.source.outputs.should_build == 'true'
         working-directory: web
         env:
-          VITE_SUPABASE_URL: \${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: \${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: |
           npm install
           npm run build
@@ -180,19 +180,19 @@ jobs:
           make_latest: true
           generate_release_notes: false
         env:
-          GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Record successfully built web source commit
         if: steps.source.outputs.should_build == 'true'
         shell: bash
         run: |
-          printf '%s\n' "\${{ steps.source.outputs.current }}" > web-source-commit.txt
+          printf '%s\n' "${{ steps.source.outputs.current }}" > web-source-commit.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add web-source-commit.txt
           if git diff --cached --quiet; then
             echo "Source commit marker is already up to date."
           else
-            git commit -m "chore: record web source \${{ steps.source.outputs.current }}"
+            git commit -m "chore: record web source ${{ steps.source.outputs.current }}"
             git push
           fi
