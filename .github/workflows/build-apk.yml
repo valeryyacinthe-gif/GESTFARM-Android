@@ -2,6 +2,9 @@ name: Build GESTFARM Android APK
 
 on:
   workflow_dispatch:
+  schedule:
+    # Vérifie régulièrement si le dépôt web GESTFARM a reçu une mise à jour.
+    - cron: "*/15 * * * *"
   push:
     branches:
       - main
@@ -11,34 +14,56 @@ permissions:
 
 jobs:
   build:
+    # Ignore le push automatique qui ne fait qu'enregistrer le SHA web déjà compilé.
+    if: github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'chore: record web source')
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Android repository
         uses: actions/checkout@v4
 
-      - name: Checkout GESTFARM web application
+      - name: Checkout latest GESTFARM web application
         uses: actions/checkout@v4
         with:
           repository: valeryyacinthe-gif/Gestfarm
           ref: main
           path: web
 
+      - name: Detect web source changes
+        id: source
+        shell: bash
+        run: |
+          current="$(git -C web rev-parse HEAD)"
+          previous="$(cat web-source-commit.txt 2>/dev/null || true)"
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+          echo "Web source: $current"
+          echo "Previously built: ${previous:-none}"
+          if [ "${GITHUB_EVENT_NAME}" = "schedule" ] && [ "$current" = "$previous" ]; then
+            echo "should_build=false" >> "$GITHUB_OUTPUT"
+            echo "No web change detected; APK build skipped."
+          else
+            echo "should_build=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Setup Node.js
+        if: steps.source.outputs.should_build == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
       - name: Setup Java
+        if: steps.source.outputs.should_build == 'true'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 21
 
       - name: Setup Android SDK
+        if: steps.source.outputs.should_build == 'true'
         uses: android-actions/setup-android@v4
 
       - name: Build GESTFARM web application
+        if: steps.source.outputs.should_build == 'true'
         working-directory: web
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
@@ -48,20 +73,25 @@ jobs:
           npm run build
 
       - name: Copy web application into Capacitor assets
+        if: steps.source.outputs.should_build == 'true'
         run: |
           rm -rf dist
           cp -R web/dist ./dist
 
       - name: Install Android wrapper dependencies
+        if: steps.source.outputs.should_build == 'true'
         run: npm install
 
       - name: Generate Android project
+        if: steps.source.outputs.should_build == 'true'
         run: npx cap add android
 
       - name: Synchronize Capacitor
+        if: steps.source.outputs.should_build == 'true'
         run: npx cap sync android
 
       - name: Install the exact GESTFARM launcher icon
+        if: steps.source.outputs.should_build == 'true'
         run: |
           test -f assets/gestfarm-icon.png
           python3 -m pip install --quiet pillow
@@ -89,23 +119,24 @@ jobs:
               icon.save(target / "ic_launcher.png", optimize=True)
               icon.save(target / "ic_launcher_round.png", optimize=True)
 
-          # Remove Capacitor's generic adaptive launcher icons so Android
-          # uses the supplied official GESTFARM PNG resources instead.
           adaptive = res / "mipmap-anydpi-v26"
           if adaptive.exists():
               import shutil
               shutil.rmtree(adaptive)
           PY
 
-      # Keep the Android debug signing key stable between builds so APK updates
-      # can be installed over the previous GESTFARM version.
+      # Cette clé de débogage est réutilisée pour permettre une installation
+      # par-dessus la version précédente. Pour une signature de production
+      # durable, une clé de release dédiée devra être stockée en secret GitHub.
       - name: Restore persistent Android debug signing key
+        if: steps.source.outputs.should_build == 'true'
         uses: actions/cache@v4
         with:
           path: ~/.android/debug.keystore
           key: gestfarm-android-debug-signing-v1
 
       - name: Create signing key when not yet cached
+        if: steps.source.outputs.should_build == 'true'
         run: |
           mkdir -p "$HOME/.android"
           if [ ! -f "$HOME/.android/debug.keystore" ]; then
@@ -122,12 +153,14 @@ jobs:
           test -s "$HOME/.android/debug.keystore"
 
       - name: Build Android APK
+        if: steps.source.outputs.should_build == 'true'
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
 
       - name: Upload GESTFARM APK
+        if: steps.source.outputs.should_build == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: GESTFARM-Android-APK
@@ -136,6 +169,7 @@ jobs:
           retention-days: 14
 
       - name: Publish latest GESTFARM Android APK
+        if: steps.source.outputs.should_build == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: android-latest
@@ -147,3 +181,18 @@ jobs:
           generate_release_notes: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Record successfully built web source commit
+        if: steps.source.outputs.should_build == 'true'
+        shell: bash
+        run: |
+          printf '%s\n' "${{ steps.source.outputs.current }}" > web-source-commit.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add web-source-commit.txt
+          if git diff --cached --quiet; then
+            echo "Source commit marker is already up to date."
+          else
+            git commit -m "chore: record web source ${{ steps.source.outputs.current }}"
+            git push
+          fi
